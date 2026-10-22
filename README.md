@@ -80,8 +80,8 @@ result = verify_citation(
 ### Full pipeline: parse → split → verify
 
 ```python
-from src.parsing.adapter import parse_document
-from src.chunking.splitter import split_document
+from src.parsing import parse_document          # re-exported from src.parsing
+from src.chunking import split_document         # re-exported from src.chunking
 from src.verify_api import verify_chunk
 
 doc = parse_document("contract.pdf")    # StructuredDocument
