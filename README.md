@@ -1,6 +1,6 @@
 # rag-verifier
 
-🎯 **[Online Demo](https://hlc0000-rag-verifier.streamlit.app)** · 📦 `pip install rag-verifier`
+🎯 **[Online Demo](https://rag-verifier.streamlit.app)** · 📦 `pip install rag-verifier`
 
 A RAG chunk quality gate library. Drop it into your ingestion pipeline, run it on every chunk **before** it enters the vector store — filter out garbage upfront instead of letting it poison later retrieval and citation stages.
 
