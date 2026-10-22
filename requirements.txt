@@ -1,0 +1,6 @@
+# Streamlit Community Cloud deployment deps
+streamlit>=1.30
+numpy>=1.24
+pymupdf>=1.23
+marko>=2.0
+lxml>=4.9

@@ -26,38 +26,17 @@ from src.models import EvidenceCard
 __all__ = ["verify_chunk", "verify_chunks", "ALL_CHECKS", "builtin_llm"]
 
 
-def verify_chunk(content=None, source_text="", *, prev_chunk="", full_doc="",
-                 text=None, checks=None, traceability_mode="exact",
+def verify_chunk(content, source_text="", *, prev_chunk="", full_doc="",
+                 checks=None, traceability_mode="exact",
                  traceability_normalizer=None, llm_callback=None) -> dict:
-    """Verify a single chunk of text.
+    """字符串接口：用户只传文本，内部自动包 EvidenceCard。
 
-    The block can be passed either as the first positional argument or via the
-    keyword ``text=`` (more descriptive for external callers). ``content=`` is
-    also accepted for symmetry with the internal naming.
+    最简调用：
+        result = verify_chunk("块文本", source_text="原文全文")
 
-    Signature (all positional-arg variants accepted):
-        verify_chunk("block text", source_text="...", prev_chunk="...", full_doc="...")
-        verify_chunk(text="block text", prev_chunk="...")
-        verify_chunk(content="block text", prev_chunk="...")
-
-    Returns a dict:
-        {"overall": VerificationStatus, "checks": {
-             "independence":        {"status": "pass|fail|uncertain", "reason": "..."},
-             "completeness":        {"status": "...", "reason": "..."},
-             "traceability":        {"status": "...", "reason": "..."},
-             "semantic_independence": {"status": "...", "reason": "..."},
-             "template_completeness": {"status": "...", "reason": "..."},
-         }}
-
-    With ``llm_callback`` not provided the semantic-independence check reports
-    ``uncertain`` (fail-open; never silently reclassified as pass).
+    高级：可传 prev_chunk、checks（裁剪检查项）、llm_callback（注入自定义 LLM）。
+    返回与 verify_chunk_obj 完全一致的 dict 结构。
     """
-    # Resolve which kwarg actually carries the block text.
-    if content is None and text is not None:
-        content = text
-    elif content is None and text is None:
-        raise TypeError("verify_chunk() requires the chunk text, pass it as the first argument or via text=... / content=...")
-
     if isinstance(content, EvidenceCard):
         card = content
     elif isinstance(content, str):

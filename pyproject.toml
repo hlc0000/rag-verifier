@@ -5,22 +5,19 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rag-verifier"
 version = "0.1.0"
-description = "Chunk-level quality verification for RAG ingestion: independence, completeness, traceability, semantic independence, template completeness. Rule-layer fast-filter + LLM semantic fallback, bilingual (zh/en)."
+description = "Chunk-level quality verification for RAG ingestion: independence, completeness, traceability, semantic independence, template completeness"
 readme = "README.md"
 requires-python = ">=3.10"
-# 验证层核心只用标准库；可选的解析/检索/LLM 依赖按需引入。
+# 验证层只用标准库；解析/检索的依赖由各自模块按需引入（docling 走独立 venv）。
 dependencies = []
 
-[project.optional-dependencies]
-# 文本层解析（默认，marko 用于 Markdown AST 直读，lxml 用于 HTML，pymupdf 用于 PDF 文本层）
-parse = ["marko>=2.0", "lxml>=4.9", "pymupdf>=1.23"]
-# Docling 视觉解析（PDF/DOCX 复杂布局，重依赖，建议独立 venv）
-parse-docling = ["docling>=2.0"]
-# 语义层（LLM 判定）——任何 OpenAI 兼容端点均可
-semantic = ["requests>=2.31"]
-# 检索层（混合检索 + LLM 精排）
-retrieval = ["sentence-transformers>=2.2", "numpy"]
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+[tool.setuptools]
+packages = [
+    "rag_verifier",
+    "src",
+    "src.chunking",
+    "src.chunking.splitters",
+    "src.parsing",
+    "src.citation",
+    "src.retrieval",
+]
