@@ -80,21 +80,22 @@ result = verify_citation(
 ### Full pipeline: parse → split → verify
 
 ```python
-from src.parsing import parse_document          # re-exported from src.parsing
-from src.chunking import split_document         # re-exported from src.chunking
+from src.parsing import parse_document
+from src.chunking import split_document
 from src.verify_api import verify_chunk
 
-doc = parse_document("contract.pdf")    # StructuredDocument
-chunks = split_document(doc)            # list[EvidenceCard]
+doc = parse_document("contract.pdf")      # StructuredDocument (has .blocks, .engine, .metadata)
+chunks = split_document(doc)              # list[dict]: {"id", "card", "source_text", ...}
+                                          #   item["card"] = {"content", "source", "locator"}
 
 prev = ""
-for chunk in chunks:
-    result = verify_chunk(chunk.content, prev_chunk=prev)
+for item in chunks:
+    content = item["card"]["content"]
+    result = verify_chunk(content, prev_chunk=prev)
     if result["overall"].value == "fail":
-        # Each check has its own status + reason
         failed = [f"{k}: {v['reason']}" for k, v in result["checks"].items() if v["status"] == "fail"]
-        print(f"DROP {chunk.id}: {'; '.join(failed)}")
-    prev = chunk.content
+        print(f"DROP {item['id']}: {'; '.join(failed)}")
+    prev = content
 ```
 
 ## Supported formats
