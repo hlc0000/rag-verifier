@@ -51,6 +51,9 @@ unsupported 与 insufficient 不可混用：unsupported 是"矛盾"，insufficie
 关键规则：若引用片段在原文中处于条件句的结果位置（即"如果A，则B"里的 B），而触发条件 A 未被
 包含在引用片段内，那么即使片段字面与声明完全一致，也判 insufficient —— 因为该引用不自足，
 单独引用会让读者误以为 B 无条件成立。
+注意：若触发条件 A 已经出现在引用片段内部，本规则不适用；也不得因为"A 自身在原文中还有更早的
+上下文"而判 insufficient —— 只要条件与结果在片段内都已完整写明，片段即自足，应判 supported。
+
 
 只输出 JSON，不要任何其他文字，格式：
 {{"verdict": "supported|unsupported|insufficient", "reason": "..."}}"""
@@ -85,6 +88,11 @@ Key rule: if the excerpt sits in the consequent position of a conditional senten
 in "if A, then B") and the triggering condition A is not included in the excerpt, judge insufficient even
 if the excerpt matches the claim word for word — the citation is not self-contained, and quoting it alone
 would make the reader believe B holds unconditionally.
+Note: if the triggering condition A is already present inside the cited excerpt, this rule does not apply;
+do not judge insufficient merely because A itself has still earlier context in the source — as long as
+the condition and the consequent are both fully stated inside the excerpt, the excerpt is self-contained
+and must be judged supported.
+
 
 Output JSON only, no other text, in this format (write `reason` in English):
 {{"verdict": "supported|unsupported|insufficient", "reason": "..."}}"""

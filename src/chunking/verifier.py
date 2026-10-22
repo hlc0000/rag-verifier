@@ -265,6 +265,17 @@ def _rule_if_then_zh(card: EvidenceCard, ctx: RuleContext):
     hit_if = next((m for m in IF_MARKERS if m in text), None)
     has_then = any(m in text for m in THEN_MARKERS)
     if hit_if and not has_then:
+        # "若X，Y"是中文最常见的完整条件句形式，不需要"则/就/那么"承接
+        # （英文侧 _rule_if_then_en 早已用逗号判主句，此处补齐对等）。
+        # 只有逗号后确实还有实质主句才算完整；"若X，"逗号后空、或条件后无逗号 → 仍是残缺。
+        tail = ""
+        for sep in ("，", ","):
+            idx = text.rfind(sep)
+            if idx != -1:
+                tail = text[idx + 1:].strip()
+                break
+        if len(tail) >= 4:
+            return None
         return VerificationResult(
             VerificationStatus.FAIL,
             f"条件句不完整: 有'{hit_if}'但无结果承接词(那么/则/就)",
