@@ -12,8 +12,8 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-# 文本层解析（默认，pymupdf 仅 PDF 文本层，lxml 用于 HTML）
-parse = ["pymupdf>=1.23", "lxml>=4.9"]
+# 文本层解析（默认，marko 用于 Markdown AST 直读，lxml 用于 HTML，pymupdf 用于 PDF 文本层）
+parse = ["marko>=2.0", "lxml>=4.9", "pymupdf>=1.23"]
 # Docling 视觉解析（PDF/DOCX 复杂布局，重依赖，建议独立 venv）
 parse-docling = ["docling>=2.0"]
 # 语义层（LLM 判定）——任何 OpenAI 兼容端点均可
