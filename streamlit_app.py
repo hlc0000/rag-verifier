@@ -412,14 +412,10 @@ def _verify_single_chunk(content: str, full_doc: str) -> dict:
 
     fail_kind = ""
     if overall == "fail":
-        import re
-        reasons = " ".join(v.get("reason", "") for v in checks.values() if v.get("status") == "fail")
-        if "碎片" in reasons or "fragment" in reasons.lower():
-            fail_kind = "fragment"
-        elif "跨块" in reasons or "Cross-chunk" in reasons or "cross-chunk" in reasons.lower():
-            fail_kind = "cross_block_ref"
-        else:
-            fail_kind = "other"
+        # 标签取「实际失败的那一关」，而不是对 reason 做关键词猜测：
+        # 原来的 碎片/跨块 二选一会让所有新规则一律落到 other。
+        failed_checks = [name for name, v in checks.items() if v.get("status") == "fail"]
+        fail_kind = failed_checks[0] if failed_checks else "other"
 
     import re
     anchor_res = [
@@ -459,7 +455,7 @@ def _render_chunk_result(r):
     text = STATUS_TEXT.get(overall, overall)
 
     if overall == "fail":
-        fail_kind = r["fail_kind"] or "issue"
+        fail_kind = CHECK_NAME_TEXT.get(r["fail_kind"], r["fail_kind"]) if r["fail_kind"] else "issue"
         reason = r["fail_reason"] or "—"
         line = f"❌ {text} - {fail_kind}: {reason}"
     elif overall == "pass":
@@ -478,6 +474,12 @@ def _render_chunk_result(r):
         f"{line}</div>",
         unsafe_allow_html=True,
     )
+
+    if overall == "uncertain":
+        st.caption(_bi(
+            "→ 在页面顶部「LLM 配置」填入 API Key 后重新验证：这一项需要语义层才能判断。",
+            "→ Add an API key in the LLM panel at the top, then re-verify — this check needs the semantic layer.",
+        ))
 
     if r["anchors"]:
         anchors_str = ", ".join(r["anchors"])
@@ -660,23 +662,6 @@ def tab_citation_faithfulness():
                 st.button(case_name, key=f"cite_case_{i}", use_container_width=True,
                           on_click=_load_citation_case, args=(case_data,))
 
-        with st.expander(t("advanced_llm")):
-            st.caption(t("advanced_caption"))
-            col_a, col_b, col_c = st.columns(3)
-            with col_a:
-                llm_base = st.text_input("LLM Base URL",
-                                          value="")
-            with col_b:
-                llm_key = st.text_input("LLM API Key", type="password",
-                                         value="")
-            with col_c:
-                llm_model = st.text_input("LLM Model",
-                                          value="")
-            if llm_key:
-                os.environ["LLM_BASE_URL"] = llm_base or "https://api.deepseek.com/v1"
-                os.environ["LLM_API_KEY"] = llm_key
-                os.environ["LLM_MODEL"] = llm_model or "deepseek-chat"
-
         st.write("")
         if st.button(t("verify_cite_btn"), type="primary", use_container_width=True,
                      disabled=not (source and citation and claim)):
@@ -846,6 +831,10 @@ def tab_batch_verification():
                         st.markdown(t("all_uncertain_msg"))
                         for reason in uncertain_reasons:
                             st.caption(f"· {reason}")
+                        st.caption(_bi(
+                            "→ 在页面顶部「LLM 配置」填入 API Key 后重新验证。",
+                            "→ Add an API key in the LLM panel at the top, then re-verify.",
+                        ))
                     st.caption(f"{t('block_full_text')}{chunks_list[i].get('content', '')}")
         else:
             st.info(t("right_placeholder_t3"))
@@ -854,6 +843,40 @@ def tab_batch_verification():
 # ──────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────
+
+def _bi(zh_text: str, en_text: str) -> str:
+    """按当前语言返回文案（避免每处都往 I18N 字典里加键）。"""
+    return zh_text if st.session_state.get("lang", "en") == "zh" else en_text
+
+
+def _render_llm_config() -> None:
+    """全局 LLM 配置（三个 Tab 之上）。
+
+    语义层是核心能力，入口必须一进来就看得见：
+    不填 key 只能拿到规则层结论，而规则层抓不到「条件被切走」这类语义问题。
+    """
+    configured = bool(st.session_state.get("llm_key"))
+    badge = (_bi("✅ 语义层已启用", "✅ Semantic layer enabled")
+             if configured else
+             _bi("⬜ 仅规则层 · 会漏判", "⬜ Rule layer only · may miss issues"))
+    with st.expander(f"{t('advanced_llm')} — {badge}", expanded=not configured):
+        st.caption(_bi(
+            "规则层只抓结构性问题（碎片、连词开头、模板空格）；"
+            "「条件被切走」「引用断章取义」这类需要读语义的判断，必须有 LLM 才会执行。不填则显示 uncertain，不会伪装通过。",
+            "The rule layer only catches structural defects (fragments, connector starts, template blanks). "
+            "Judgments that need meaning — dropped conditions, quotes taken out of context — require an LLM. "
+            "Without a key those checks return uncertain; we never fake a pass.",
+        ))
+        col_a, col_b, col_c = st.columns(3)
+        col_a.text_input("LLM Base URL", key="llm_base",
+                         placeholder="https://api.deepseek.com/v1")
+        col_b.text_input("LLM API Key", type="password", key="llm_key")
+        col_c.text_input("LLM Model", key="llm_model", placeholder="deepseek-chat")
+        if st.session_state.get("llm_key"):
+            os.environ["LLM_BASE_URL"] = st.session_state.get("llm_base") or "https://api.deepseek.com/v1"
+            os.environ["LLM_API_KEY"] = st.session_state["llm_key"]
+            os.environ["LLM_MODEL"] = st.session_state.get("llm_model") or "deepseek-chat"
+
 
 def main():
     st.set_page_config(
@@ -868,6 +891,7 @@ def main():
         "chunk_source": "", "chunk_input": "", "chunk_result": None,
         "cite_source": "", "cite_input": "", "claim_input": "", "citation_result": None,
         "batch_full_doc": "", "batch_chunks_json": "", "batch_result": None,
+        "llm_base": "", "llm_key": "", "llm_model": "",
     }
     for k, v in defaults.items():
         st.session_state.setdefault(k, v)
@@ -899,6 +923,9 @@ def main():
         st.rerun()
 
     st.write("")
+
+    # 全局 LLM 配置：必须在三个 Tab 之前，否则用户看到 uncertain 却找不到入口
+    _render_llm_config()
 
     tab1, tab2, tab3 = st.tabs([t("tab1"), t("tab2"), t("tab3")])
     with tab1:
