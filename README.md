@@ -8,9 +8,9 @@ Five checks run sequentially on each chunk. The rule layer is fast (pure regex, 
 
 | Check | Rule layer (fast filter) | LLM semantic layer (fallback) |
 |---|---|---|
-| independence | dependent connective at start (However/Therefore/因此), incomplete conditional ending (If/When/If 若...), fragments, empty chunks, table-continuation markers | trigger condition cut away, elided subject |
+| independence | dependent connective at start (However/Therefore/Accordingly), incomplete conditional ending (If/When/Unless), fragments, empty chunks, table-continuation markers | trigger condition cut away, elided subject |
 | completeness | conditional pairings, concessive pairings, dependent connective with word boundary | — |
-| traceability | unresolved anaphora (因此/该合同 无前文), cross-chunk substantive references (as shown in Figure 2) | — |
+| traceability | unresolved anaphora (this/that/it with no referent in-chunk), cross-chunk substantive references (as shown in Figure 2) | — |
 | template_completeness | bracketed placeholders (`[yyyy]`), underscore blanks, quantity/date/signature slots | — |
 | semantic_independence | — | full independent judgment with the complete document as context |
 
@@ -33,10 +33,10 @@ pip install -e ".[parse,semantic]"         # common combo
 from src.verify_api import verify_chunk
 
 result = verify_chunk(
-    text="因此甲方有权要求乙方赔偿。",
-    prev_chunk="若乙方违反保密义务，",
+    text="Therefore the Contractor has the right to claim damages from the Client.",
+    prev_chunk="If the Client breaches any material obligation under this Agreement,",
 )
-# result = {"status": "fail", "reason": "Starts with a dependent connective...", "checks": {...}}
+# result = {"status": "fail", "reason": "Starts with a dependent connective: 'Therefore'", "checks": {...}}
 ```
 
 ### With LLM semantic layer (API key required)
