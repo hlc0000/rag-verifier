@@ -1,0 +1,43 @@
+# 敏感凭证
+.env
+.env.local
+.secrets
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+.eggs/
+
+# 虚拟环境
+.venv/
+.venv-*/
+venv/
+env/
+
+# 构建缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+dist/
+build/
+*.whl
+
+# 运行产物
+*.db
+*.sqlite
+*.log
+data/parsed_*.json
+data/chunks_*.json
+data/verify_*.json
+data/_rule_audit.json
+
+# 系统
+.DS_Store
+.vscode/
+.idea/
+*.swp
