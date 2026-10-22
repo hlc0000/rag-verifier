@@ -23,6 +23,20 @@ EN_DEPENDENT_STARTER_RE = re.compile(
     r'^(?:Therefore|Thus|However|But|So|In conclusion)\b'
 )
 
+# 单字承接词必须连到主语/谓语/情态词才算残缺：裸匹配"并"会误伤"并购/并行/并网/并发/并列/并存"。
+# 例："并要求乙方承担违约责任。"命中（缺主语与触发条件）；"并购交易应经股东会批准。"放行。
+# `并(?![购行网发列存入举联非])` 排除实测存在的复合词首字，宁可漏判也不误伤。
+ZH_CONJ_STARTER_RE = re.compile(
+    r'^(?:并且|并(?![购行网发列存入举联非])|以及|同时)(?:且)?'
+    r'(?:要求|应当|应|须|需|需要|有权|可以|可|不得|不予|同意|承诺|保证|承担|支付|按|向|对|在|将|于'
+    r'|甲方|乙方|双方|任何一方|当事人)'
+)
+
+# 英文对应规则（保持中英对等）：以并列/补充连词开头的块同样缺主语或前提。
+EN_CONJ_STARTER_RE = re.compile(
+    r'^(?:And|Also|Additionally|Moreover|Furthermore|Plus)\b', re.IGNORECASE
+)
+
 INCOMPLETE_ENDINGS = [
     "如果", "假如", "倘若", "因为", "由于", "虽然", "尽管",
     "若", "除非",
@@ -127,6 +141,20 @@ def _rule_dependent_starter_zh(card: EvidenceCard, ctx: RuleContext):
     return None
 
 
+@register_rule("independence", "zh", id="conjunctive_starter_zh")
+def _rule_conjunctive_starter_zh(card: EvidenceCard, ctx: RuleContext):
+    """以单字连词开头的块：主语与触发条件都在前文，单独成块必不自足。"""
+    text = card.content.strip()
+    match = ZH_CONJ_STARTER_RE.match(text)
+    if match:
+        return VerificationResult(
+            VerificationStatus.FAIL,
+            f"以承接词开头，主语与前文条件被切断: '{match.group()}'",
+            {"starter": match.group()},
+        )
+    return None
+
+
 @register_rule("independence", "en", id="dependent_starter_en")
 def _rule_dependent_starter_en(card: EvidenceCard, ctx: RuleContext):
     match = EN_DEPENDENT_STARTER_RE.match(card.content.strip())
@@ -149,6 +177,19 @@ def _rule_incomplete_ending_zh(card: EvidenceCard, ctx: RuleContext):
                 f"以不完整条件句结尾: '{ending}'",
                 {"ending": ending},
             )
+    return None
+
+
+@register_rule("independence", "en", id="conjunctive_starter_en")
+def _rule_conjunctive_starter_en(card: EvidenceCard, ctx: RuleContext):
+    """英文并列/补充连词开头的块：主语或前提在前文，单独成块不自足。"""
+    match = EN_CONJ_STARTER_RE.match(card.content.strip())
+    if match:
+        return VerificationResult(
+            VerificationStatus.FAIL,
+            f"Starts with a conjunctive connector; subject/premise is in the prior chunk: '{match.group()}'",
+            {"starter": match.group()},
+        )
     return None
 
 
