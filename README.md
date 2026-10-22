@@ -36,7 +36,9 @@ result = verify_chunk(
     text="Therefore the Contractor has the right to claim damages from the Client.",
     prev_chunk="If the Client breaches any material obligation under this Agreement,",
 )
-# result = {"status": "fail", "reason": "Starts with a dependent connective: 'Therefore'", "checks": {...}}
+# result["overall"].value == "fail"
+# result["checks"]["independence"]["status"] == "fail"
+# result["checks"]["independence"]["reason"] == "Starts with a dependent connective: 'Therefore'"
 ```
 
 ### With LLM semantic layer (API key required)
@@ -56,6 +58,7 @@ result = verify_chunk(
     text="Therefore Party A has the right to claim compensation from Party B.",
     prev_chunk="If Party B breaches the confidentiality obligation,",
     full_doc="If Party B breaches the confidentiality obligation, therefore Party A ...",  # optional, semantic layer uses it
+    llm_callback=builtin_llm,  # inject the LLM client (otherwise semantic check returns uncertain)
 )
 ```
 
@@ -71,7 +74,7 @@ result = verify_citation(
     citation="Copyright [yyyy] [name of copyright owner]",
     source_text="... full Apache 2.0 original text ...",
 )
-# result = {"status": "insufficient", "reason": "Template placeholder not filled in...", "checks": {...}}
+# Citation API uses the simpler shape: result["status"], result["reason"], result["checks"]
 ```
 
 ### Full pipeline: parse → split → verify
@@ -87,8 +90,10 @@ chunks = split_document(doc)            # list[EvidenceCard]
 prev = ""
 for chunk in chunks:
     result = verify_chunk(chunk.content, prev_chunk=prev)
-    if result["status"] == "fail":
-        print(f"DROP {chunk.id}: {result['reason']}")
+    if result["overall"].value == "fail":
+        # Each check has its own status + reason
+        failed = [f"{k}: {v['reason']}" for k, v in result["checks"].items() if v["status"] == "fail"]
+        print(f"DROP {chunk.id}: {'; '.join(failed)}")
     prev = chunk.content
 ```
 
