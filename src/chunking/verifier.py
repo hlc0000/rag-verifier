@@ -206,6 +206,78 @@ def _rule_incomplete_ending_en(card: EvidenceCard, ctx: RuleContext):
     return None
 
 
+# 跨边界条件回看：块自身没有任何结构标记，但上一块里有条件标记（if/notwithstanding/若X 等），
+# 说明当前块是条件句的结果分句，单独拿出来不自足。
+#
+# 覆盖场景：切分器在逗号处劈开单句 —— `If Party A is 60 days late,` 成上一块、
+# `Party B may terminate...` 成当前块。当前块无任何 marker，旧规则层碰不到。
+#
+# 窗口优先级：
+#   1. prev_chunk 参数（调用方直接传了上一块内容，最精确）
+#   2. full_doc 反推：找块起点 → 往前扫到句末标点停（退化路径，UI 手动输入时）
+# 两种窗口覆盖等价（实测），prev_chunk 更干净且不受 full_doc.find 歧义影响。
+_CROSS_BOUNDARY_TERM = set("。；;.!？？！")
+
+_ZH_CONDITION_PREFIX_RE = re.compile(r"^(若|如果|假如|倘若|除非|虽|尽管|即使|虽然)")
+
+@register_rule("independence", "any", id="cross_boundary_condition")
+def _rule_cross_boundary_condition(card: EvidenceCard, ctx: RuleContext):
+    content = card.content.strip()
+    if not content:
+        return None
+
+    prev_chunk = (ctx.prev_chunk or "").strip()
+    full_doc = ctx.full_doc or ""
+
+    # 选窗口：prev_chunk 优先，full_doc 反推做 fallback
+    window = ""
+    if prev_chunk:
+        window = prev_chunk
+    elif full_doc:
+        idx = full_doc.find(content)
+        if idx == -1:
+            return None
+        start = max(0, idx - 200)
+        for i in range(idx - 1, start - 1, -1):
+            if full_doc[i] in _CROSS_BOUNDARY_TERM:
+                start = i + 1
+                break
+        window = full_doc[start:idx].strip()
+
+    if not window:
+        return None
+
+    # 窗口如果以句末标点结尾 → 上一块是完整句（不是逗号分隔的条件前导分句），
+    # 条件标记在句中大概率是普通短语（如 "subject to change"），不是条件前导。
+    # 跳过这种窗口。
+    if window[-1] in _CROSS_BOUNDARY_TERM:
+        return None
+
+    # 中英文分别判。命中条件标记必须在窗口前半段（≤ 前 30%）——
+    # 过滤句中短语："The tool is subject to change without notice" 里的 "subject to"
+    # 位置在窗口中间，不是分句前导条件，不应该触发。
+    hit = None
+    if ctx.lang == "en":
+        m = EN_CONDITION_MARKER_RE.search(window)
+        if m and m.start() <= len(window) * 0.3:
+            hit = m.group()
+    else:  # zh
+        # 中文标记更短，用更严格的阈值：标记必须在窗口前 20 字符内
+        for marker in ("若", "如果", "假如", "倘若", "除非", "虽", "尽管", "即使", "虽然"):
+            pos = window.find(marker)
+            if pos != -1 and pos <= 20:
+                hit = marker
+                break
+
+    if hit:
+        return VerificationResult(
+            VerificationStatus.FAIL,
+            f"前文存在条件/让步标记 '{hit}'，当前块可能是条件句的结果分句，不自足",
+            {"lead": hit, "window": window[:80]},
+        )
+    return None
+
+
 def verify_independence(card: EvidenceCard, ctx: RuleContext | None = None) -> VerificationResult:
     ctx = ctx or RuleContext(lang=detect_language(card.content))
     for rule in rules_for("independence", ctx.lang):
@@ -313,8 +385,11 @@ EN_CONDITION_RESOLVE_RE = re.compile(
 
 # 词边界必须同时排除连字符：HTTP 头 "If-Match"/"If-None-Match" 里的 If 不是条件词
 # （RFC 9110 实测 5 条标题被误判），因此左右都不许紧邻 - 或单词字符。
+# Subject to / Notwithstanding：法律英语高频条件前导，词边界安全（不会在 "subject to change" 这种普通短语里
+# 被误判为条件分句标记——跨边界回看时，这类短语所在的完整句在句末标点后自然截断，不会进入窗口）。
 EN_CONDITION_MARKER_RE = re.compile(
-    r'(?<![-\w])(?:If|When|Unless|Provided\s+that|In\s+the\s+event\s+that|Where)(?![-\w])',
+    r'(?<![-\w])(?:If|When|Unless|Provided\s+that|In\s+the\s+event\s+that|Where'
+    r'|Subject\s+to|Notwithstanding)(?![-\w])',
     re.IGNORECASE,
 )
 
