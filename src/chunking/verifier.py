@@ -270,9 +270,16 @@ def _rule_cross_boundary_condition(card: EvidenceCard, ctx: RuleContext):
                 break
 
     if hit:
+        if ctx.lang == "en":
+            reason = (
+                f"Prior chunk opens with a conditional/concessive lead '{hit}' — "
+                f"this chunk is likely the result clause and is not self-contained."
+            )
+        else:
+            reason = f"前文存在条件/让步标记 '{hit}'，当前块可能是条件句的结果分句，不自足"
         return VerificationResult(
             VerificationStatus.FAIL,
-            f"前文存在条件/让步标记 '{hit}'，当前块可能是条件句的结果分句，不自足",
+            reason,
             {"lead": hit, "window": window[:80]},
         )
     return None
