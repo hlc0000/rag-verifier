@@ -217,6 +217,7 @@ def _rule_incomplete_ending_en(card: EvidenceCard, ctx: RuleContext):
 #   2. full_doc 反推：找块起点 → 往前扫到句末标点停（退化路径，UI 手动输入时）
 # 两种窗口覆盖等价（实测），prev_chunk 更干净且不受 full_doc.find 歧义影响。
 _CROSS_BOUNDARY_TERM = set("。；;.!？？！")
+_CROSS_BOUNDARY_WINDOW_MAX = 200
 
 _ZH_CONDITION_PREFIX_RE = re.compile(r"^(若|如果|假如|倘若|除非|虽|尽管|即使|虽然)")
 
@@ -229,22 +230,37 @@ def _rule_cross_boundary_condition(card: EvidenceCard, ctx: RuleContext):
     prev_chunk = (ctx.prev_chunk or "").strip()
     full_doc = ctx.full_doc or ""
 
-    # 选窗口：prev_chunk 优先，full_doc 反推做 fallback
-    window = ""
+    # 取边界前的上下文尾巴：prev_chunk 优先，full_doc 反推做 fallback。
+    # prev_chunk 可能是整块（实测 2000+ 字符，尾部还常黏 PDF 页脚），
+    # 不能整段当窗口——否则句末标点守卫失效、30% 阈值形同虚设（基线实测大量误伤）。
+    tail = ""
     if prev_chunk:
-        window = prev_chunk
+        tail = prev_chunk[-_CROSS_BOUNDARY_WINDOW_MAX:]
     elif full_doc:
         idx = full_doc.find(content)
         if idx == -1:
             return None
-        start = max(0, idx - 200)
-        for i in range(idx - 1, start - 1, -1):
-            if full_doc[i] in _CROSS_BOUNDARY_TERM:
-                start = i + 1
-                break
-        window = full_doc[start:idx].strip()
+        tail = full_doc[max(0, idx - _CROSS_BOUNDARY_WINDOW_MAX):idx]
+
+    # 窗口 = 尾巴里最后一个句末标点之后的片段；这样窗口要么是条件前导分句，
+    # 要么是完整句的尾部/页脚，后两者不含行首条件标记，自然不触发。
+    cut = -1
+    for i in range(len(tail) - 1, -1, -1):
+        if tail[i] in _CROSS_BOUNDARY_TERM:
+            cut = i
+            break
+    if cut == -1 and len(tail) >= _CROSS_BOUNDARY_WINDOW_MAX:
+        # 整个 200 字符都找不到句末标点：长块/页脚粘连，不是可判定的条件前导，跳过
+        return None
+    window = tail[cut + 1:].strip()
 
     if not window:
+        return None
+
+    # 条件前导分句被切分器劈开时，边界一定落在逗号处（切分只发生在标点上）。
+    # 窗口里没有逗号 → 是标题/短语（实测 "When to Evaluate" 这种章节标题会误命中），
+    # 不是被劈开的条件分句，跳过。
+    if "," not in window and "，" not in window:
         return None
 
     # 窗口如果以句末标点结尾 → 上一块是完整句（不是逗号分隔的条件前导分句），
