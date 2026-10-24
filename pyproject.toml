@@ -11,13 +11,8 @@ requires-python = ">=3.10"
 # 验证层只用标准库；解析/检索的依赖由各自模块按需引入（docling 走独立 venv）。
 dependencies = []
 
-[tool.setuptools]
-packages = [
-    "rag_verifier",
-    "src",
-    "src.chunking",
-    "src.chunking.splitters",
-    "src.parsing",
-    "src.citation",
-    "src.retrieval",
-]
+[project.optional-dependencies]
+parse = ["pymupdf>=1.23", "marko>=2.0", "lxml>=4.9"]
+
+[tool.setuptools.packages.find]
+include = ["rag_verifier*"]
