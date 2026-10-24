@@ -11,10 +11,15 @@ requires-python = ">=3.10"
 # 验证层只用标准库；解析/检索的依赖由各自模块按需引入（docling 走独立 venv）。
 dependencies = []
 
+[project.scripts]
+rag-verifier = "rag_verifier.cli:main"
+
 [project.optional-dependencies]
 # pymupdf 2.0 起不再提供 Intel Mac wheel；<2.0 保证全平台可装，
 # 且解析层代码是针对 1.x API 开发验证的
 parse = ["pymupdf>=1.23,<2.0", "marko>=2.0", "lxml>=4.9"]
+# LangChain 集成：提供 VerifierTransformer，可直接接入 LCEL 流水线
+langchain = ["langchain-core>=0.2"]
 
 [tool.setuptools.packages.find]
 include = ["rag_verifier*"]
