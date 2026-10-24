@@ -15,8 +15,8 @@ import json
 import re
 from pathlib import Path
 
-from src.retrieval.generate import chat
-from src.retrieval.corpus import DATA_DIR
+from rag_verifier.retrieval.generate import chat
+from rag_verifier.retrieval.corpus import DATA_DIR
 
 # 改写结果磁盘缓存：同问题不重复烧 LLM；评估权重模拟全靠它
 _CACHE_FILE = DATA_DIR / "rewrite_cache.json"

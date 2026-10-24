@@ -19,7 +19,7 @@ Article 与 Section 时，Article 行另作分组边界，为块提供章节级�
 """
 import re
 
-from src.chunking.splitters import (
+from rag_verifier.chunking.splitters import (
     TABLE_LINE, collect_preamble, emit, emit_preamble, emit_table, is_table_line,
     join_span, join_unit,
 )

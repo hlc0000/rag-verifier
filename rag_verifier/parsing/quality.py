@@ -18,7 +18,7 @@ import unicodedata
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
-from src.parsing.models import StructuredDocument
+from rag_verifier.parsing.models import StructuredDocument
 
 # 全文文本低于该字数视为"空"（扫描件、纯图片页、解析翻车都会命中）
 EMPTY_TEXT_MIN = 50

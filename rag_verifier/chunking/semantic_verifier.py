@@ -7,8 +7,8 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-from src.models import EvidenceCard, VerificationResult, VerificationStatus
-from src.chunking.rules import RuleContext, detect_language, register_rule, rules_for
+from rag_verifier.models import EvidenceCard, VerificationResult, VerificationStatus
+from rag_verifier.chunking.rules import RuleContext, detect_language, register_rule, rules_for
 
 
 def _load_dotenv() -> None:

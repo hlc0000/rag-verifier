@@ -9,7 +9,7 @@
 纯标题单元（标题后紧跟下一个标题、自身无正文）不单独成块，
 只作为 source_text 的分组边界——避免切出一堆只有标题的碎片。
 """
-from src.chunking.splitters import (
+from rag_verifier.chunking.splitters import (
     TABLE_LINE, collect_preamble, emit, emit_preamble, emit_table, is_table_line,
     join_span, join_unit,
 )

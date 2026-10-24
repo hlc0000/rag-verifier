@@ -14,8 +14,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.parsing.base import Parser, register
-from src.parsing.models import Block, StructuredDocument, serialize_table
+from rag_verifier.parsing.base import Parser, register
+from rag_verifier.parsing.models import Block, StructuredDocument, serialize_table
 
 
 def _inline_text(node) -> str:

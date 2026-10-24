@@ -20,12 +20,12 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.chunking.splitter import split_document
-from src.chunking.verifier import verify_chunk
-from src.models import EvidenceCard
-from src.parsing import parse_document
-from src.parsing.models import StructuredDocument
-from src.retrieval.corpus import DATA_DIR, PROJECT_ROOT
+from rag_verifier.chunking.splitter import split_document
+from rag_verifier.chunking.verifier import verify_chunk
+from rag_verifier.models import EvidenceCard
+from rag_verifier.parsing import parse_document
+from rag_verifier.parsing.models import StructuredDocument
+from rag_verifier.retrieval.corpus import DATA_DIR, PROJECT_ROOT
 
 REGISTRY_PATH = DATA_DIR / "doc_registry.json"
 # 与 scripts/verify_chunks.py 同口径：前置内容与整表块不参与块级验证。
@@ -173,7 +173,7 @@ def rebuild_registry() -> dict:
     文件在根目录）。都找不到（原始文件未保留）则 source_path/source_sha1 留空——这类条目
     无法做 unchanged 快判，下次 ingest 同一 stem 会重跑，属预期行为（宁可重跑，不假装未变）。
     """
-    from src.parsing.base import SUPPORTED_FORMATS
+    from rag_verifier.parsing.base import SUPPORTED_FORMATS
 
     def locate(stem: str) -> Path | None:
         for base in (DATA_DIR, PROJECT_ROOT):

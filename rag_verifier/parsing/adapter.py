@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from src.parsing.models import StructuredDocument
+from rag_verifier.parsing.models import StructuredDocument
 
 TABLE_SENTINEL = "\x00T{}\x00"
 

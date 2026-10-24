@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import re
 
-from src.parsing.adapter import _normalize
-from src.parsing.models import StructuredDocument
+from rag_verifier.parsing.adapter import _normalize
+from rag_verifier.parsing.models import StructuredDocument
 
 # 文档类型 → [(正则, 层级)]。列表内顺序即优先级：更具体的编号规则必须排在前面
 # （如 "5.1" 要排在 "5." 前，否则会被 '\d+\.' 抢先匹配成二级）。

@@ -19,9 +19,9 @@
     # 需要语义层时显式注入（内置客户端只是可选实现）：
     results = verify_chunks(chunks, llm_callback=builtin_llm)
 """
-from src.chunking.semantic_verifier import builtin_llm
-from src.chunking.verifier import ALL_CHECKS, verify_chunk as _verify_chunk_obj
-from src.models import EvidenceCard
+from rag_verifier.chunking.semantic_verifier import builtin_llm
+from rag_verifier.chunking.verifier import ALL_CHECKS, verify_chunk as _verify_chunk_obj
+from rag_verifier.models import EvidenceCard
 
 __all__ = ["verify_chunk", "verify_chunks", "ALL_CHECKS", "builtin_llm"]
 

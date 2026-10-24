@@ -14,9 +14,9 @@
 import re
 from importlib import import_module
 
-from src.chunking.detector import detect_structure, select_splitter
-from src.parsing.text_clean import DIGIT_LINE, TOC_HEADING, HEADING_FRAGMENT
-from src.parsing.adapter import document_to_lines
+from rag_verifier.chunking.detector import detect_structure, select_splitter
+from rag_verifier.parsing.text_clean import DIGIT_LINE, TOC_HEADING, HEADING_FRAGMENT
+from rag_verifier.parsing.adapter import document_to_lines
 
 
 def clean_pages(pages: list[dict]) -> list[tuple[str, int]]:
@@ -89,7 +89,7 @@ def split_document(doc=None, pages: list[dict] | None = None, text: str | None =
             chosen = "heading_ast"
         else:
             chosen = select_splitter(structure["active"])
-    module = import_module(f"src.chunking.splitters.{chosen}")
+    module = import_module(f"rag_verifier.chunking.splitters.{chosen}")
     kwargs = dict(source=source, structure=structure, chosen=chosen, tables=tables)
     if chosen == "heading_ast":
         kwargs["heading_levels"] = heading_levels

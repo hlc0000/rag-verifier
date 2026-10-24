@@ -1,9 +1,9 @@
 import json
 import re
 
-from src.chunking.semantic_verifier import _post_chat
-from src.chunking.rules import detect_language
-from src.chunking.verifier import (
+from rag_verifier.chunking.semantic_verifier import _post_chat
+from rag_verifier.chunking.rules import detect_language
+from rag_verifier.chunking.verifier import (
     _CROSS_BOUNDARY_TERM,
     _CROSS_BOUNDARY_WINDOW_MAX,
     EN_CONDITION_MARKER_RE,

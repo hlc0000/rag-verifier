@@ -8,8 +8,8 @@
 """
 import re
 
-from src.retrieval.bm25 import tokenize
-from src.retrieval.corpus import ChunkRecord, TABLE_ANCHOR_RE
+from rag_verifier.retrieval.bm25 import tokenize
+from rag_verifier.retrieval.corpus import ChunkRecord, TABLE_ANCHOR_RE
 
 
 def _norm(s: str) -> str:

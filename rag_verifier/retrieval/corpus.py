@@ -9,8 +9,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.chunking.splitter import split_document
-from src.parsing.models import StructuredDocument
+from rag_verifier.chunking.splitter import split_document
+from rag_verifier.parsing.models import StructuredDocument
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"

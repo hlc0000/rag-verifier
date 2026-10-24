@@ -8,13 +8,13 @@
 """
 import re
 
-from src.models import EvidenceCard, VerificationResult, VerificationStatus
-from src.chunking.rules import RuleContext, detect_language, register_rule, rules_for
-from src.chunking.semantic_verifier import (
+from rag_verifier.models import EvidenceCard, VerificationResult, VerificationStatus
+from rag_verifier.chunking.rules import RuleContext, detect_language, register_rule, rules_for
+from rag_verifier.chunking.semantic_verifier import (
     SKIP_LLM, has_multiple_sentences_en, has_multiple_sentences_zh,
     verify_semantic_independence,
 )
-from src.chunking.template_verifier import verify_template_completeness
+from rag_verifier.chunking.template_verifier import verify_template_completeness
 
 DEPENDENT_STARTERS = [
     "因此", "所以", "但是", "然而", "不过", "综上所述", "由此可见",

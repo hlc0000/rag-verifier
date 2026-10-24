@@ -18,9 +18,9 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.citation.verifier import verify_citation  # noqa: E402
-from src.verify_api import verify_chunk, verify_chunks  # noqa: E402
-from src.models import EvidenceCard  # noqa: E402
+from rag_verifier.citation.verifier import verify_citation  # noqa: E402
+from rag_verifier.verify_api import verify_chunk, verify_chunks  # noqa: E402
+from rag_verifier.models import EvidenceCard  # noqa: E402
 
 
 # ──────────────────────────────────────────────────────────────
@@ -394,7 +394,7 @@ BATCH_TEST_CASES = {
 def _llm_callback():
     """配了 LLM key 就返回内置回调，否则返回 None（语义层跳过，绝不伪装通过）。"""
     if os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY"):
-        from src.chunking.semantic_verifier import builtin_llm
+        from rag_verifier.chunking.semantic_verifier import builtin_llm
         return builtin_llm
     return None
 

@@ -8,7 +8,7 @@ import urllib.request
 import urllib.error
 
 # 复用语义验证层的配置与 .env 加载（导入即触发 _load_dotenv）
-from src.chunking.semantic_verifier import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, _ssl_context
+from rag_verifier.chunking.semantic_verifier import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, _ssl_context
 
 ANSWER_PROMPT = """你是严谨的文档问答助手。下面是从文档库检出的证据块，每块标注了来源与质量验证标签。
 

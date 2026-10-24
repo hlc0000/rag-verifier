@@ -13,11 +13,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import src.chunking.verifier  # noqa: E402,F401
-import src.chunking.semantic_verifier  # noqa: E402,F401
-import src.chunking.template_verifier  # noqa: E402,F401
-from src.chunking.rules import RuleContext, list_rules, rules_for  # noqa: E402
-from src.models import EvidenceCard  # noqa: E402
+import rag_verifier.chunking.verifier  # noqa: E402,F401
+import rag_verifier.chunking.semantic_verifier  # noqa: E402,F401
+import rag_verifier.chunking.template_verifier  # noqa: E402,F401
+from rag_verifier.chunking.rules import RuleContext, list_rules, rules_for  # noqa: E402
+from rag_verifier.models import EvidenceCard  # noqa: E402
 
 # rule_id -> {"pos": 应判 FAIL 的样本, "neg": 应判 PASS 的样本, "prev": 该规则用到的前文}
 CASES = {

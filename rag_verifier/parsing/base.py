@@ -17,8 +17,8 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from pathlib import Path
 
-from src.parsing.models import StructuredDocument
-from src.parsing.quality import QualityReport, build_quality_report
+from rag_verifier.parsing.models import StructuredDocument
+from rag_verifier.parsing.quality import QualityReport, build_quality_report
 
 # auto 模式的优先级：布局识别强的在前，缺依赖时自然落到下一个
 AUTO_ORDER = ("docling", "pymupdf")
@@ -86,9 +86,9 @@ def available_engines() -> list[str]:
     import importlib.util
 
     # 触发内置解析器模块导入（注册走装饰器；模块内部对重依赖延迟导入）
-    for mod in ("src.parsing.pymupdf_parser", "src.parsing.docling_parser",
-                "src.parsing.markdown_parser", "src.parsing.html_parser",
-                "src.parsing.txt_parser"):
+    for mod in ("rag_verifier.parsing.pymupdf_parser", "rag_verifier.parsing.docling_parser",
+                "rag_verifier.parsing.markdown_parser", "rag_verifier.parsing.html_parser",
+                "rag_verifier.parsing.txt_parser"):
         try:
             import_module(mod)
         except ImportError:

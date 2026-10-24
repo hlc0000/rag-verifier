@@ -14,8 +14,8 @@ import numpy as np
 # 模型下载走国内镜像，避免直连 huggingface.co 被墙（与 docling 同一约定）
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
-from src.retrieval.bm25 import BM25, tokenize  # noqa: E402
-from src.retrieval.corpus import DATA_DIR, ChunkRecord  # noqa: E402
+from rag_verifier.retrieval.bm25 import BM25, tokenize  # noqa: E402
+from rag_verifier.retrieval.corpus import DATA_DIR, ChunkRecord  # noqa: E402
 
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 # 旧「全库单文件」缓存：仅作一次性迁移来源（seed 完新分片缓存后即可退休）。

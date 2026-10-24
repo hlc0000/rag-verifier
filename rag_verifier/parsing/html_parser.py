@@ -12,8 +12,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from src.parsing.base import Parser, register
-from src.parsing.models import Block, StructuredDocument, serialize_table
+from rag_verifier.parsing.base import Parser, register
+from rag_verifier.parsing.models import Block, StructuredDocument, serialize_table
 
 # 这些标签及其子树不提取正文
 _SKIP = {"script", "style", "noscript", "template", "head", "nav",

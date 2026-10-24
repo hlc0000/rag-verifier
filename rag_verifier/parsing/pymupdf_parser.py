@@ -15,9 +15,9 @@ import re
 from collections import Counter
 from pathlib import Path
 
-from src.parsing.base import Parser, register
-from src.parsing.models import Block, StructuredDocument, serialize_table
-from src.parsing.text_clean import DIGIT_LINE, TOC_HEADING, HEADING_FRAGMENT, merge_fragments
+from rag_verifier.parsing.base import Parser, register
+from rag_verifier.parsing.models import Block, StructuredDocument, serialize_table
+from rag_verifier.parsing.text_clean import DIGIT_LINE, TOC_HEADING, HEADING_FRAGMENT, merge_fragments
 
 # 页码判定：纯数字行落在页顶 10% 或页底 20% 区域内
 NUM_LINE = re.compile(r"^\d{1,3}$")

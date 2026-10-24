@@ -7,7 +7,7 @@
 """
 import re
 
-from src.chunking.splitters import (
+from rag_verifier.chunking.splitters import (
     TABLE_LINE, collect_preamble, emit, emit_preamble, emit_table, is_table_line,
     join_unit,
 )

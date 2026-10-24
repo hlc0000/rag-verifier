@@ -4,8 +4,8 @@
 """
 import re
 
-from src.models import EvidenceCard, VerificationResult, VerificationStatus
-from src.chunking.rules import RuleContext, detect_language, register_rule, rules_for
+from rag_verifier.models import EvidenceCard, VerificationResult, VerificationStatus
+from rag_verifier.chunking.rules import RuleContext, detect_language, register_rule, rules_for
 
 # 标点空位
 PUNCTUATION_PLACEHOLDER = [

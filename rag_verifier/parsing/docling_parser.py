@@ -53,9 +53,9 @@ def _clean_docling_text(text: str) -> str:
         cur = _CJK_NUM_SPACE.sub(r'\1\2', cur)
     return cur
 
-from src.parsing.base import Parser, register
-from src.parsing.level_inference import infer_levels_from_sequence
-from src.parsing.models import Block, StructuredDocument, serialize_table
+from rag_verifier.parsing.base import Parser, register
+from rag_verifier.parsing.level_inference import infer_levels_from_sequence
+from rag_verifier.parsing.models import Block, StructuredDocument, serialize_table
 
 # HF 直连在国内网络下被重置，走镜像（已显式设置时不覆盖）
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")

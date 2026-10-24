@@ -5,7 +5,7 @@ lang="any" 的规则对所有语种生效。规则按注册顺序执行，先命
 
 第三方扩展示例（不改本仓库任何文件）：
 
-    from src.chunking.rules import register_rule
+    from rag_verifier.chunking.rules import register_rule
 
     @register_rule("completeness", lang="en", id="no_currency_unit")
     def my_rule(card, ctx):
@@ -17,7 +17,7 @@ import re
 from dataclasses import dataclass
 from typing import Callable
 
-from src.models import EvidenceCard
+from rag_verifier.models import EvidenceCard
 
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 

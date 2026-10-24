@@ -2,11 +2,11 @@
 
 职责边界：只做「视觉/格式 → 逻辑/结构」的翻译，不做切分、不做验证、不做检索。
 """
-from src.parsing.base import (
+from rag_verifier.parsing.base import (
     ParseError, Parser, available_engines, get_parser, parse_document, register,
 )
-from src.parsing.models import Block, StructuredDocument, serialize_table
-from src.parsing.quality import (
+from rag_verifier.parsing.models import Block, StructuredDocument, serialize_table
+from rag_verifier.parsing.quality import (
     QualityReport, build_quality_report, check_against_raw_text, validate_parse_quality,
 )
 

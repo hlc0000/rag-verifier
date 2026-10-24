@@ -17,8 +17,8 @@ from __future__ import annotations
 
 import re
 
-from src.parsing.adapter import _normalize
-from src.parsing.models import StructuredDocument
+from rag_verifier.parsing.adapter import _normalize
+from rag_verifier.parsing.models import StructuredDocument
 
 _CN = "一二三四五六七八九十百零〇两"
 

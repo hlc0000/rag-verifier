@@ -13,7 +13,7 @@
 """
 import re
 
-from src.chunking.splitters import TABLE_LINE, emit, emit_table, is_table_line
+from rag_verifier.chunking.splitters import TABLE_LINE, emit, emit_table, is_table_line
 
 CHOSEN = "paragraph_fallback"
 

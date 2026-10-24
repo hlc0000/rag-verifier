@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.parsing.base import Parser, register
-from src.parsing.models import Block, StructuredDocument
+from rag_verifier.parsing.base import Parser, register
+from rag_verifier.parsing.models import Block, StructuredDocument
 
 
 def convert_txt(path: str) -> StructuredDocument:

@@ -11,7 +11,7 @@ fail-open 原则：LLM 异常/输出不可解析/未选满时，退回 RRF 原�
 """
 import json
 
-from src.retrieval.generate import chat
+from rag_verifier.retrieval.generate import chat
 
 RERANK_PROMPT = """You are a relevance judge for a document retrieval system.
 
