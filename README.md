@@ -3,11 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/hlc0000/rag-verifier/actions/workflows/ci.yml/badge.svg)](https://github.com/hlc0000/rag-verifier/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
-[![PyPI](https://img.shields.io/badge/PyPI-coming%20soon-orange.svg)](#installation)
+[![PyPI version](https://img.shields.io/pypi/v/rag-verifier.svg)](https://pypi.org/project/rag-verifier/)
 
 🎯 **[Online Demo](https://rag-verifier.streamlit.app)** · 📦 `pip install rag-verifier`
-
-> **PyPI publishing is in progress.** Until then, install from GitHub — see [Installation](#installation).
 
 ![demo](docs/demo.png)
 
@@ -77,12 +75,6 @@ Parse with anything, chunk with anything, gate with rag-verifier.
 pip install rag-verifier
 ```
 
-> **Status:** PyPI upload is being finalized. The command above will work once published. Meanwhile, install from GitHub:
-
-```bash
-pip install git+https://github.com/hlc0000/rag-verifier.git
-```
-
 The core verification layer is **zero-dependency** (pure stdlib — the LLM calls go through `urllib`). Optional extras:
 
 ```bash
@@ -90,7 +82,7 @@ pip install "rag-verifier[parse]"        # PDF/DOCX/Markdown/HTML parsing
 pip install "rag-verifier[langchain]"    # VerifierTransformer for LangChain pipelines
 ```
 
-<details><summary>Development install (editable)</summary>
+<details><summary>Install from source (development)</summary>
 
 ```bash
 git clone https://github.com/hlc0000/rag-verifier.git
