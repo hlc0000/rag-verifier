@@ -121,6 +121,17 @@ def has_cut_condition_in_prev(prev_chunk: str) -> tuple[bool, str]:
         return False, ""
     if any(res in prev for res in CONDITION_RESOLVE):
         return False, ""
+    # 「若X，Y」豁免：逗号后有实质主句（含祈使句"若X，请Y"），说明前文是完整条件句，
+    # 当前块不是它的结果分句——与 if_then_pair_zh 的逗号豁免口径对齐
+    # （DJI 发布记录页脚"若升级失败，请重启…"连锁误伤 9 块实测，known_issues #13）。
+    tail = ""
+    for sep in ("，", ","):
+        idx = prev.rfind(sep)
+        if idx != -1:
+            tail = prev[idx + 1:].strip()
+            break
+    if len(tail) >= 4:
+        return False, ""
     return True, f"触发条件从句'{prev[:24]}'留在前文，块是孤立主句"
 
 
@@ -409,6 +420,19 @@ EN_DANGLING_RE = re.compile(
     re.IGNORECASE,
 )
 
+# 多句豁免：块内 ≥2 个完整句子即结构自足，开头承接词是文体过渡而非依赖信号
+# （伯克希尔股东信实测：Consequently/Then/Furthermore 开头的多句完整段落被误伤，
+# known_issues #7）。已知代价：多句的真依赖（"So sanctified…"类）会被放行漏给
+# 语义层——宁漏勿误伤，可接受。
+# 句末点号两侧都是数字时不切分——"1.100%" 的小数点不是句末。
+_EN_SENTENCE_END_RE = re.compile(r'(?<!\d)[.!?]+(?!\d)(?:["\')\]]+)?(?:\s+|$)')
+
+
+def has_multiple_sentences_en(text: str) -> bool:
+    """英文块内是否有 ≥2 个实质句子（≥10 字符）；缩写/小数点不算句末。"""
+    parts = [p.strip() for p in _EN_SENTENCE_END_RE.split(text)]
+    return sum(1 for p in parts if len(p) >= 10) >= 2
+
 
 @register_rule("semantic_independence", "zh", id="anaphora_zh")
 def _rule_anaphora_zh(card: EvidenceCard, ctx: RuleContext):
@@ -463,8 +487,11 @@ def _rule_missing_subject_en(card: EvidenceCard, ctx: RuleContext):
 
 @register_rule("semantic_independence", "en", id="dangling_condition_en")
 def _rule_dangling_en(card: EvidenceCard, ctx: RuleContext):
-    match = EN_DANGLING_RE.match(card.content.strip())
-    if match:
+    text = card.content.strip()
+    match = EN_DANGLING_RE.match(text)
+    # 多句豁免：块自身是两三句的完整段落时，开头承接词只是文体过渡（书信/叙事文体
+    # 常见），不是条件被切走的信号。
+    if match and not has_multiple_sentences_en(text):
         reason = (f"Chunk starts with the connective '{match.group()}', "
                   f"so its triggering condition lives in a previous chunk")
         return VerificationResult(VerificationStatus.FAIL, reason, {"issues": [reason]})

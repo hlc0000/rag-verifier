@@ -10,7 +10,9 @@ import re
 
 from src.models import EvidenceCard, VerificationResult, VerificationStatus
 from src.chunking.rules import RuleContext, detect_language, register_rule, rules_for
-from src.chunking.semantic_verifier import SKIP_LLM, verify_semantic_independence
+from src.chunking.semantic_verifier import (
+    SKIP_LLM, has_multiple_sentences_en, verify_semantic_independence,
+)
 from src.chunking.template_verifier import verify_template_completeness
 
 DEPENDENT_STARTERS = [
@@ -157,8 +159,11 @@ def _rule_conjunctive_starter_zh(card: EvidenceCard, ctx: RuleContext):
 
 @register_rule("independence", "en", id="dependent_starter_en")
 def _rule_dependent_starter_en(card: EvidenceCard, ctx: RuleContext):
-    match = EN_DEPENDENT_STARTER_RE.match(card.content.strip())
-    if match:
+    text = card.content.strip()
+    match = EN_DEPENDENT_STARTER_RE.match(text)
+    # 多句豁免（known_issues #7）：两三句的完整段落以 Therefore/So/But 开头是文体过渡，
+    # 结构自足，放行；单句仍拦截。已知代价：多句真依赖（"So sanctified…"类）漏给语义层。
+    if match and not has_multiple_sentences_en(text):
         return VerificationResult(
             VerificationStatus.FAIL,
             f"Starts with a dependent connective: '{match.group()}'",
@@ -183,8 +188,11 @@ def _rule_incomplete_ending_zh(card: EvidenceCard, ctx: RuleContext):
 @register_rule("independence", "en", id="conjunctive_starter_en")
 def _rule_conjunctive_starter_en(card: EvidenceCard, ctx: RuleContext):
     """英文并列/补充连词开头的块：主语或前提在前文，单独成块不自足。"""
-    match = EN_CONJ_STARTER_RE.match(card.content.strip())
-    if match:
+    text = card.content.strip()
+    match = EN_CONJ_STARTER_RE.match(text)
+    # 多句豁免（known_issues #7）：多句完整段落以 Furthermore/And then/Additionally
+    # 开头是文体过渡，结构自足，放行；单句仍拦截。
+    if match and not has_multiple_sentences_en(text):
         return VerificationResult(
             VerificationStatus.FAIL,
             f"Starts with a conjunctive connector; subject/premise is in the prior chunk: '{match.group()}'",
@@ -216,7 +224,9 @@ def _rule_incomplete_ending_en(card: EvidenceCard, ctx: RuleContext):
 #   1. prev_chunk 参数（调用方直接传了上一块内容，最精确）
 #   2. full_doc 反推：找块起点 → 往前扫到句末标点停（退化路径，UI 手动输入时）
 # 两种窗口覆盖等价（实测），prev_chunk 更干净且不受 full_doc.find 歧义影响。
-_CROSS_BOUNDARY_TERM = set("。；;.!？？！")
+# 英文 "?" 必须在集合里：反问/疑问句是完整思路，窗口若在句中 "When completed, ...?"
+# 这种反问的条件状语处起切，会把完整问句误判成未配对条件前导（伯克希尔书信实测误伤）。
+_CROSS_BOUNDARY_TERM = set("。；;.!?？？！")
 _CROSS_BOUNDARY_WINDOW_MAX = 200
 
 _ZH_CONDITION_PREFIX_RE = re.compile(r"^(若|如果|假如|倘若|除非|虽|尽管|即使|虽然)")
@@ -417,6 +427,16 @@ EN_CONDITION_MARKER_RE = re.compile(
 )
 
 
+# 句中路径专用标记集：不含 When/Where——叙事文里句中 when/where 多为时间/地点副词
+# （"imagine the surprise ... when that same company paid ..."），不是条件前导，
+# 伯克希尔书信实测误伤。句中路径只保留 If/Unless/Provided that 等真条件标记。
+EN_CONDITION_MID_RE = re.compile(
+    r'(?<![-\w])(?:If|Unless|Provided\s+that|In\s+the\s+event\s+that'
+    r'|Subject\s+to|Notwithstanding)(?![-\w])',
+    re.IGNORECASE,
+)
+
+
 @register_rule("completeness", "en", id="if_then_pair_en")
 def _rule_if_then_en(card: EvidenceCard, ctx: RuleContext):
     text = card.content.strip()
@@ -435,7 +455,7 @@ def _rule_if_then_en(card: EvidenceCard, ctx: RuleContext):
         # 主句，RFC 9110 实测 6 条标题被误判。真实的条件从句截断不可能只有十几个字符。
         if len(text) < 40:
             return None
-        marker = EN_CONDITION_MARKER_RE.search(text)
+        marker = EN_CONDITION_MID_RE.search(text)
         if marker and "," not in text and not EN_CONDITION_RESOLVE_RE.search(text):
             return VerificationResult(
                 VerificationStatus.FAIL,
