@@ -11,7 +11,8 @@ import re
 from src.models import EvidenceCard, VerificationResult, VerificationStatus
 from src.chunking.rules import RuleContext, detect_language, register_rule, rules_for
 from src.chunking.semantic_verifier import (
-    SKIP_LLM, has_multiple_sentences_en, verify_semantic_independence,
+    SKIP_LLM, has_multiple_sentences_en, has_multiple_sentences_zh,
+    verify_semantic_independence,
 )
 from src.chunking.template_verifier import verify_template_completeness
 
@@ -62,6 +63,22 @@ IF_MARKERS = ["如果", "假如", "倘若", "若", "除非"]
 # "请"是祈使结果句的合法承接："若升级失败，请重启"——条件自带祈使结果即完整，
 # 无需"就/那么"。真实截断块（"若乙方违反保密义务"↘戛然而止）不含"请"，不受影响。
 THEN_MARKERS = ["那么", "则", "就", "便", "所以", "因此", "故", "从而", "于是", "请"]
+
+# 裸"若"的词界守卫："若干"的"若"不是条件标记（最高法文书名称"…若干问题的意见"
+# 实测误伤）。"若非/若是/若无"仍是条件用法，只排除"若干"。
+_ZH_IF_RUO_RE = re.compile(r'若(?!干)')
+
+
+def _find_if_marker_zh(text: str):
+    """在 text 中找首个条件标记；裸"若"走词界守卫，排除"若干"。"""
+    for m in IF_MARKERS:
+        if m == "若":
+            if _ZH_IF_RUO_RE.search(text):
+                return m
+            continue
+        if m in text:
+            return m
+    return None
 
 # 让步/转折配对：让步句以"虽然/尽管"开头，必须配上主句的转折词才算完整。
 # 不能直接塞进 DEPENDENT_STARTERS —— 完整的让步句也以"虽然"开头。
@@ -135,6 +152,11 @@ def _rule_dependent_starter_zh(card: EvidenceCard, ctx: RuleContext):
     text = card.content.strip()
     for starter in DEPENDENT_STARTERS:
         if text.startswith(starter):
+            # 多句豁免（与英文侧 known_issues #7 对等）：两三句的完整段落以
+            # 「此外/因此」开头是文体过渡，结构自足，放行；单句仍拦截。
+            # （最高法指导性案例实测：4 个完整句的"此外，关于…"块被误伤）
+            if has_multiple_sentences_zh(text):
+                return None
             return VerificationResult(
                 VerificationStatus.FAIL,
                 f"以依赖连接词开头: '{starter}'",
@@ -367,7 +389,7 @@ def _rule_cross_block_ref_en(card: EvidenceCard, ctx: RuleContext):
 @register_rule("completeness", "zh", id="if_then_pair_zh")
 def _rule_if_then_zh(card: EvidenceCard, ctx: RuleContext):
     text = card.content.strip()
-    hit_if = next((m for m in IF_MARKERS if m in text), None)
+    hit_if = _find_if_marker_zh(text)
     has_then = any(m in text for m in THEN_MARKERS)
     if hit_if and not has_then:
         # "若X，Y"是中文最常见的完整条件句形式，不需要"则/就/那么"承接

@@ -41,6 +41,12 @@ ANAPHORA_MARKERS = ["该", "这", "其", "此", "上述", "前述", "该等", "�
 ANAPHORA_COMPOUND_PREV = {
     "此": "因由据为特至从彼就如以除",
 }
+# 后字构词豁免："此外"的"此"是词首、无左邻可走上一张表，只能看后字。
+# "此外"是纯承接词（=moreover），从不作指代词用；"此时/此后/此前"的"此"是
+# 真指代，不在豁免列（最高法指导性案例实测：块首"此外，"被误判无指代对象）。
+ANAPHORA_COMPOUND_NEXT = {
+    "此": "外",
+}
 CONDITION_MARKERS = ["如果", "假如", "倘若", "若", "如", "当", "除非", "因", "由于"]
 CLAUSE_PATTERN = re.compile(r'^第[一二三四五六七八九十\d]+条')
 
@@ -67,6 +73,11 @@ def has_unresolved_anaphora(text: str) -> tuple[bool, str]:
                 break
             # 构词成分（如"因此"中的"此"）不是指代词，跳过继续找下一个
             if idx > 0 and text[idx - 1] in ANAPHORA_COMPOUND_PREV.get(marker, ""):
+                start = idx + 1
+                continue
+            # 词首构词成分（如"此外"中的"此"）无左邻可走上一张表，看后字豁免
+            after_char = text[idx + len(marker):idx + len(marker) + 1]
+            if after_char and after_char in ANAPHORA_COMPOUND_NEXT.get(marker, ""):
                 start = idx + 1
                 continue
             after = text[idx + len(marker):idx + len(marker) + 5]
@@ -431,6 +442,19 @@ _EN_SENTENCE_END_RE = re.compile(r'(?<!\d)[.!?]+(?!\d)(?:["\')\]]+)?(?:\s+|$)')
 def has_multiple_sentences_en(text: str) -> bool:
     """英文块内是否有 ≥2 个实质句子（≥10 字符）；缩写/小数点不算句末。"""
     parts = [p.strip() for p in _EN_SENTENCE_END_RE.split(text)]
+    return sum(1 for p in parts if len(p) >= 10) >= 2
+
+
+# 中文多句豁免与英文侧对等（known_issues #7 只修了英文，最高法指导性案例实测：
+# 「此外，关于另案…定性。…规定：…。李某…不构成立功。李某…从严惩处。」
+# 4 个完整句的块被 dependent_starter_zh 误伤）。已知代价同英文：多句的真依赖
+# 会被放行漏给语义层——宁漏勿误伤，可接受。
+_ZH_SENTENCE_END_RE = re.compile(r'[。！？!?]+(?:["\'”’）】》]+)?')
+
+
+def has_multiple_sentences_zh(text: str) -> bool:
+    """中文块内是否有 ≥2 个实质句子（≥10 字符）。"""
+    parts = [p.strip() for p in _ZH_SENTENCE_END_RE.split(text)]
     return sum(1 for p in parts if len(p) >= 10) >= 2
 
 
