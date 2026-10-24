@@ -3,6 +3,11 @@ import re
 
 from src.chunking.semantic_verifier import _post_chat
 from src.chunking.rules import detect_language
+from src.chunking.verifier import (
+    _CROSS_BOUNDARY_TERM,
+    _CROSS_BOUNDARY_WINDOW_MAX,
+    EN_CONDITION_MARKER_RE,
+)
 
 SUPPORTED = "supported"
 UNSUPPORTED = "unsupported"
@@ -124,6 +129,39 @@ def _llm_faithfulness(claim: str, citation: str, source_text: str, lang: str = "
     return {"verdict": verdict, "reason": parsed.get("reason", "")}
 
 
+def _truncated_consequent(citation: str, source_text: str, en: bool) -> "str | None":
+    """确定性闸门：引用在原文中的位置若是"被切走前提的结果分句"，返回命中的条件标记。
+
+    窗口逻辑与 chunking.cross_boundary_condition 完全一致（该规则 1388 块基线零误伤）：
+    取引用起点前 200 字符，以最后一个句末标点截断得到窗口；窗口含逗号、不以句末标点
+    收尾、且条件标记出现在窗口前段 → 引用紧跟未配对条件前导，单独引用会误导。
+    """
+    pos = source_text.find(citation.strip())
+    if pos <= 0:
+        return None
+    tail = source_text[max(0, pos - _CROSS_BOUNDARY_WINDOW_MAX):pos]
+    cut = -1
+    for i in range(len(tail) - 1, -1, -1):
+        if tail[i] in _CROSS_BOUNDARY_TERM:
+            cut = i
+            break
+    if cut == -1:
+        return None
+    window = tail[cut + 1:].strip()
+    if not window or ("," not in window and "，" not in window):
+        return None
+    if window[-1] in _CROSS_BOUNDARY_TERM:
+        return None
+    if en:
+        m = EN_CONDITION_MARKER_RE.search(window)
+        return m.group() if (m and m.start() <= len(window) * 0.3) else None
+    for marker in ("如果", "假如", "倘若", "除非", "尽管", "即使", "虽然", "若", "虽"):
+        p = window.find(marker)
+        if p != -1 and p <= 20:
+            return marker
+    return None
+
+
 def verify_citation(claim: str, citation: str, source_text: str) -> dict:
     """
     验证 answer 中的一条声明是否被它声称的引用支持。
@@ -177,6 +215,20 @@ def verify_citation(claim: str, citation: str, source_text: str) -> dict:
             ),
             "checks": checks,
         }
+
+    # 规则闸门：引用是"被切走前提的结果分句"→ 确定性 insufficient，不调 LLM。
+    # 截断条件句是 LLM 忠实性判定的实测短板（考试 55% 识别率），且判定本身
+    # 是确定性字符串检查，下沉规则层后零摇摆、零成本。
+    marker = _truncated_consequent(citation, source_text, en)
+    if marker is not None:
+        reason = (
+            f"The excerpt is the consequent of a conditional whose trigger "
+            f"(introduced by '{marker}') was cut away before it — not self-contained"
+            if en else
+            f"引用是条件句的结果分句，触发条件（'{marker}' 引导）在引用之前被切走，单独引用不自足"
+        )
+        checks["faithfulness"] = {"status": "fail", "reason": reason}
+        return {"status": INSUFFICIENT, "reason": reason, "checks": checks}
 
     # 第三层：忠实性（NLI 三分类）
     result = _llm_faithfulness(claim, citation, source_text, lang="en" if en else "zh")
