@@ -12,7 +12,9 @@ requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]
-parse = ["pymupdf>=1.23", "marko>=2.0", "lxml>=4.9"]
+# pymupdf 2.0 起不再提供 Intel Mac wheel；<2.0 保证全平台可装，
+# 且解析层代码是针对 1.x API 开发验证的
+parse = ["pymupdf>=1.23,<2.0", "marko>=2.0", "lxml>=4.9"]
 
 [tool.setuptools.packages.find]
 include = ["rag_verifier*"]
