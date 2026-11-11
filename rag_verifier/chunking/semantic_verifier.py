@@ -277,10 +277,10 @@ def _build_prompt(text: str, context: str = "") -> str:
   "ref_target": "missing_in_context=true 时填引用目标，否则空字符串"}}"""
 
 
-def _post_chat(prompt: str) -> str:
-    """调用 OpenAI 兼容的 chat/completions 端点，返回首个 choice 的文本内容。
+def chat_completion(prompt: str) -> tuple[str, dict]:
+    """调用 OpenAI 兼容端点，返回（首个 choice 的文本, usage）。
 
-    配置每次调用时从环境变量读取，方便调用方在进程运行期（如 UI 里填写）切换 key/model。
+    调用方需要计费/成本核算时用这个；只要文本的老调用方继续用 _post_chat。
     """
     api_key = os.environ.get("LLM_API_KEY") or os.environ.get("DEEPSEEK_API_KEY") or ""
     base_url = os.environ.get("LLM_BASE_URL") or LLM_BASE_URL
@@ -305,7 +305,12 @@ def _post_chat(prompt: str) -> str:
     )
     with urllib.request.urlopen(req, timeout=60, context=_ssl_context()) as resp:
         data = json.load(resp)
-    return data["choices"][0]["message"]["content"]
+    return data["choices"][0]["message"]["content"], data.get("usage") or {}
+
+
+def _post_chat(prompt: str) -> str:
+    """调用 chat/completions，只取文本内容（旧调用方的兼容入口）。"""
+    return chat_completion(prompt)[0]
 
 
 # 对外别名：外部接入方可显式传入 builtin_llm 启用语义层，不传则语义层跳过

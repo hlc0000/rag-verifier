@@ -1,7 +1,7 @@
 import json
 import re
 
-from rag_verifier.chunking.semantic_verifier import _post_chat
+from rag_verifier.chunking.semantic_verifier import chat_completion
 from rag_verifier.chunking.rules import detect_language
 from rag_verifier.chunking.verifier import (
     _CROSS_BOUNDARY_TERM,
@@ -107,7 +107,7 @@ def _llm_faithfulness(claim: str, citation: str, source_text: str, lang: str = "
     """返回 {"verdict": str, "reason": str} 或 {"llm_unavailable": True, "reason": str}。"""
     en = lang == "en"
     try:
-        content = _post_chat(_faithfulness_prompt(claim, citation, source_text))
+        content, usage = chat_completion(_faithfulness_prompt(claim, citation, source_text))
     except Exception as e:
         return {"llm_unavailable": True, "reason": f"{type(e).__name__}: {e}"}
 
@@ -126,7 +126,7 @@ def _llm_faithfulness(claim: str, citation: str, source_text: str, lang: str = "
     if verdict not in VALID_VERDICTS:
         return {"llm_unavailable": True, "reason": (
             f"Invalid verdict: {verdict!r}" if en else f"verdict 非法: {verdict!r}")}
-    return {"verdict": verdict, "reason": parsed.get("reason", "")}
+    return {"verdict": verdict, "reason": parsed.get("reason", ""), "usage": usage}
 
 
 def _truncated_consequent(citation: str, source_text: str, en: bool) -> "str | None":
@@ -214,6 +214,7 @@ def verify_citation(claim: str, citation: str, source_text: str) -> dict:
                 "引用不存在于原文，或与原文不一致（伪造/篡改的引用）"
             ),
             "checks": checks,
+            "usage": {},
         }
 
     # 规则闸门：引用是"被切走前提的结果分句"→ 确定性 insufficient，不调 LLM。
@@ -228,7 +229,7 @@ def verify_citation(claim: str, citation: str, source_text: str) -> dict:
             f"引用是条件句的结果分句，触发条件（'{marker}' 引导）在引用之前被切走，单独引用不自足"
         )
         checks["faithfulness"] = {"status": "fail", "reason": reason}
-        return {"status": INSUFFICIENT, "reason": reason, "checks": checks}
+        return {"status": INSUFFICIENT, "reason": reason, "checks": checks, "usage": {}}
 
     # 第三层：忠实性（NLI 三分类）
     result = _llm_faithfulness(claim, citation, source_text, lang="en" if en else "zh")
@@ -240,6 +241,7 @@ def verify_citation(claim: str, citation: str, source_text: str) -> dict:
                        if en else
                        f"LLM不可用，忠实性无法判定: {result.get('reason', '')}"),
             "checks": checks,
+            "usage": {},
         }
 
     verdict = result["verdict"]
@@ -247,4 +249,5 @@ def verify_citation(claim: str, citation: str, source_text: str) -> dict:
         "status": "pass" if verdict == SUPPORTED else "fail",
         "reason": result.get("reason", ""),
     }
-    return {"status": verdict, "reason": result.get("reason", ""), "checks": checks}
+    return {"status": verdict, "reason": result.get("reason", ""), "checks": checks,
+            "usage": result.get("usage") or {}}

@@ -12,7 +12,7 @@ from rag_verifier.chunking.splitters import (
     join_unit,
 )
 
-CLAUSE = re.compile(r"^第[一二三四五六七八九十百零〇\d]+条")
+CLAUSE = re.compile(r"^第[一二三四五六七八九十百千零〇\d]+条")
 ITEM = re.compile(r"^（[一二三四五六七八九十]+）")
 
 CHOSEN = "hierarchical_chinese"
