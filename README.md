@@ -79,6 +79,7 @@ The core verification layer is **zero-dependency** (pure stdlib — the LLM call
 
 ```bash
 pip install "rag-verifier[parse]"        # PDF/DOCX/Markdown/HTML parsing
+pip install "rag-verifier[retrieval]"    # hybrid index (numpy + fastembed)
 pip install "rag-verifier[langchain]"    # VerifierTransformer for LangChain pipelines
 ```
 
